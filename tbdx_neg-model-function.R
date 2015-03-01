@@ -21,7 +21,7 @@ tbdx_neg <- function(
    tx=0.82,                                   # success of Tx once TB diagnosed
    dx=4,                                      # rate of TB detection after symptoms develop
    sn_smpos=0.80,                             # sensitivity diagnosis smear-pos; 0.80 standard, 0.98 molecular test or culture
-   sn_smneg=0.20,                             # sensitivity diagnosis smear-neg; 0.20 standard, 0.50 molecular, 0.85 culture
+   sn_smneg=0.25,                             # sensitivity diagnosis smear-neg; 0.20 standard, 0.50 molecular, 0.85 culture
    lfu=0,                                     # fraction of detected patients lost to f/u before Tx, zero at baseline
 ## HIV transmission and progression
    hivinc=0, #0.035,                          # HIV incidence; provides an equilibrium HIV prevalence of 16.8%
@@ -103,9 +103,33 @@ tbdx_neg <- function(
    lam[tt + 1] <- lam_0 * (TSP[tt + 1] + i_smneg * TSN[tt + 1])
    } # end for(tt in seq_len(ntimes - 1))
    compart <- N_neg #cbind(N_neg, N_hiv, N_aids)
-   dimnames(compart)[[2]] <- paste(c("S", "L", "DSP", "USP", "DSN", "USN"), "neg", sep="_")
-   invisible(list(pop=compart, lam=lam, TSP=TSP, TSN=TSN, M=M))
-}
 
-x_neg <- tbdx_neg()
-plot(x_neg$lam, type="l")
+   #mortality
+   mortality <- (mu_smpos_neg-1/35)*TSP+(mu_smneg_neg-1/35)*TSN
+
+   #prevalence
+   prevalence <- TSN + TSP
+
+   #incidences from susceptible, latent, reinfections capable of primary progression
+   inc1 <- (pp_neg*lam)*N_neg[tt+1, 1]
+   inc2 <- er_neg*N_neg[tt+1, 2]
+   inc3 <- lr_neg*pp_neg*lam*N_neg[tt+1, 2]
+   incidence <- inc1+ inc2 + inc3
+
+   dimnames(compart)[[2]] <- paste(c("S", "L", "DSP", "USP", "DSN", "USN"), "neg", sep="_")
+   invisible(list(pop=compart, lam=lam, TSP=TSP, TSN=TSN, M=M, incidence=incidence, prevalence=prevalence, mortality=mortality))
+
+
+}
+   x_neg <- tbdx_neg()
+
+   do.call("cbind", x_neg)[c(1:6, 9996:10001),]
+
+
+   plot(x_neg$lam, type="l")
+   plot(x_neg$incidence, type="l")
+   plot(x_neg$mortality, type="l")
+   plot(x_neg$prevalence, type="l")
+
+
+
